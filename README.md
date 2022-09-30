@@ -1,4 +1,5 @@
 # led_display
+# https://www.youtube.com/watch?v=_a1n5R9T6qw
 # Downloads news headlines from links in rss.py and displays on a hacked info globe.
 # Raspberry Pi Zero is used with a wired ethernet connection.
 # Most of the existing circuit and logic in inflo globe was removed. 
