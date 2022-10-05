@@ -1,5 +1,5 @@
-led_display
-1. https://www.youtube.com/watch?v=_a1n5R9T6qw
+led_display https://www.youtube.com/watch?v=_a1n5R9T6qw
+1. Hacked infoglobe to display news headlines.
 2. Downloads news headlines from links in rss.py and displays on a hacked info globe.
 3. Raspberry Pi Zero is used with a wired ethernet connection.
 4. Most of the existing circuit and logic in inflo globe was removed. 
