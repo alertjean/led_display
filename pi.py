@@ -13,6 +13,7 @@ import urllib
 import threading
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer # python2
 import Queue as queue
+import requests
 
 lookup =  {
            ' ': 0x20 , ' ': 0x40 , ' ': 0x60 , 'mb1': 0x80,
@@ -49,6 +50,24 @@ lookup =  {
            '?': 0x3F , ' ': 0x5F , ' ': 0x7F
         }
     
+
+def wait_for_internet():
+    i=0
+    while True:
+        time.sleep(10)
+        print "Waiting for internet connection.."
+        try:
+            response = requests.get('http://www.google.com',timeout=10)
+            return
+        except requests.ConnectionError:
+            pass
+        if((i%30)==0):
+            print "Restarting wlan0.."
+            subprocess.Popen(['sudo', 'ip', 'link', 'set', 'eth0', 'down'])
+            time.sleep(5)
+            subprocess.Popen(['sudo', 'ip', 'link', 'set', 'eth0', 'up'])
+        i=i+1
+
 
 def get_wave(byte):
     byte_wave = [];
@@ -285,6 +304,7 @@ zero = pi.wave_create()
 
 server_q = queue.Queue()
 news_q   = queue.Queue(maxsize=1)
+wait_for_internet()
 main_loop()
 
 
