@@ -11,8 +11,8 @@ import datetime as dt
 import os
 import urllib
 import threading
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer # python2
-import Queue as queue
+from http.server import BaseHTTPRequestHandler, HTTPServer # python2
+import queue
 import requests
 
 lookup =  {
@@ -55,14 +55,14 @@ def wait_for_internet():
     i=0
     while True:
         time.sleep(10)
-        print "Waiting for internet connection.."
+        print ("Waiting for internet connection..")
         try:
             response = requests.get('http://www.google.com',timeout=10)
             return
         except requests.ConnectionError:
             pass
         if((i%30)==0):
-            print "Restarting wlan0.."
+            print ("Restarting wlan0..")
             subprocess.Popen(['sudo', 'ip', 'link', 'set', 'eth0', 'down'])
             time.sleep(5)
             subprocess.Popen(['sudo', 'ip', 'link', 'set', 'eth0', 'up'])
@@ -115,62 +115,62 @@ def get_display_line(single_line):
     while single_line:
         chunk = single_line[:max_length]
         single_line = single_line[max_length:]
-        lines.append(old_chunk[(max_length/2):max_length]+chunk[:(max_length/2)])
+        lines.append(old_chunk[(max_length//2):max_length]+chunk[:(max_length//2)])
         lines.append(chunk)
         old_chunk = chunk
     return lines
 
 def get_news_loop():
     while True:
-        print 'Waiting to fill news queue'
+        print ('Waiting to fill news queue')
         news=get_news(5000)
-        print "Fresh news ready!"
+        print ("Fresh news ready!")
         news_q.put(news)
-        print 'Filled news queue'
+        print ('Filled news queue')
 
 def get_news(news_length):
     news = ""
     #for country in links.keys():
         #for category in random.sample(links[country].keys(),1):
             #for link in random.sample(links[country][category].keys(),1):
-    country  = random.sample(('US','IN'),1)[0]
+    country  = random.sample(['US','IN'],1)[0]
     #country  = random.sample(('IN'),1)[0]
-    category = random.sample(('general','business','science','tech','entertainment','politics'),1)[0]
+    category = random.sample(['general','business','science','tech','entertainment','politics'],1)[0]
     #category = random.sample(('kerala'),1)[0]
     i=0
-    print 'Getting news {} {} {}'.format(country,category,news_length)
+    print ('Getting news {} {} {}'.format(country,category,news_length))
     while True:
-        link     = random.sample(links[country][category].keys(),1)[0]
-        #print "Collecting news from [{0}][{1}][{2}]".format(country,category,link)
+        link     = random.sample(list(links[country][category].keys()),1)[0]
+        #print ("Collecting news from [{0}][{1}][{2}]".format(country,category,link))
         feed = feedparser.parse(link)
         items = feed["items"]
         if(len(items)==0):
             i=i+1
             if(i==10):
-                print 'Waiting for internet'
+                print ('Waiting for internet')
                 time.sleep(10)
                 i=0
         else:
             i=0
         try:
             for item in items:
-                if item.has_key("title"):
+                if "title" in item:
                     title = item["title"]
                     if(title.count(' ')<3): # Remove short phrases 
                         continue
                     #print("[{0}]".format(title))
                     news+=title + ' '* 30 + title + ' '* 30 
-                    print 'New length {}'.format(len(news))
+                    print ('New length {}'.format(len(news)))
                     if(len(news)>news_length):
                         return(news)
 
                 else:
-                    print "No title {}".format(link)
+                    print ("No title {}".format(link))
         except ValueError:
             pass 
-            print "Failure {}".format(link)
+            print ("Failure {}".format(link))
 def get_char_code(char):
-    if(lookup.has_key(char)):
+    if char in lookup:
         return(lookup[char])
     else:
         return(lookup[' '])
@@ -193,7 +193,7 @@ def check_hours(hours,wait=False):
         now=dt.datetime.now()
         if(now.hour in hours):
             if wait is True:
-                print 'Waiting hour {}'.format(now.hour)
+                print ('Waiting hour {}'.format(now.hour))
                 time.sleep(600)
             else:
                 return True
@@ -224,13 +224,13 @@ class HandleRequests(BaseHTTPRequestHandler):
         if message.startswith('reboot=1'):
             message = 'Rebooting now..'
             self.wfile.write(message)
-            print message
+            print (message)
             server_q.put(message)
             os.system('sudo reboot now')
         with open('/home/pi/display/home.html','r') as f:
             html=f.read()
         self.wfile.write(html)
-        print 'Display [{}]'.format(message)
+        print ('Display [{}]'.format(message))
         
     def do_PUT(self):
         self.do_POST()
@@ -238,7 +238,7 @@ class HandleRequests(BaseHTTPRequestHandler):
 def run_server(): 
     host = ''
     port = 80
-    print 'Starting web server'
+    print ('Starting web server')
     HTTPServer((host, port), HandleRequests).serve_forever()
 
 def main_loop():
@@ -252,28 +252,28 @@ def main_loop():
     news.start()
     server.daemon=True
     server.start()
-    print 'Started web server'
+    print ('Started web server')
     while True:
         if(initial == 1):
             single_line = "Welcome!"
             initial = 0
         elif not server_q.empty():
-            print "Got server request"
+            print ("Got server request")
             single_line=server_q.get()
             single_line+=' ' * 20
             single_line=single_line * 4
             server_q.task_done()
         else:
             single_line=news_q.get(block=True)
-            print "Got news to display"
+            print ("Got news to display")
         lines = get_display_line(single_line)
-        print "Display start"
+        print ("Display start")
         old_time=time.time();
         for line in lines:
             if not server_q.empty():
                 break
             new_time=time.time();
-            print '[{}][{:0.6f}]'.format(line.encode('utf-8'),new_time-old_time-3.30)
+            print ('[{}][{:0.6f}]'.format(line.encode('utf-8'),new_time-old_time-3.30))
             final_wave = get_line_wave(line)
             pi.wave_chain(final_wave)
             old_time=new_time
@@ -287,9 +287,9 @@ def main_loop():
 
 
 ########### Main 
-time.sleep(5)
+time.sleep(30)
 pi=pigpio.pi()
-print "Maximum waveform size is %dus\n" % pi.wave_get_max_micros()
+print ("Maximum waveform size is {}us".format(pi.wave_get_max_micros()))
 
 if not pi.connected:
    exit()
